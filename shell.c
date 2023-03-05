@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <unistd.h>
 
 #define MAX_ARGS 10
 
@@ -29,11 +29,30 @@ char** get_args(char* cl) {
 
     // Terminate the args array with a null pointer
     args[i] = NULL; 
-    // Remove the newline character 
+    // Remove the newline character for last arg 
     args[i-1] = strsep(&args[i-1], "\n");; 
     return args;
 }
 
+
+// unfinished and incorrect
+void get_command(){
+  char* filename = "finley79212.txt";
+  char* path = getenv("PATH");
+  char* dir = strtok(path, ":");
+  printf ("dir: %s\n", dir);
+
+    while (dir != NULL) {
+      char filepath[1024];
+      snprintf(path, sizeof(path), "%s/%s", dir, filename);
+      printf ("PATH: %s\n", path);
+      if (access(path, F_OK) == 0) {
+          printf("Found %s at %s\n", filename, dir);
+          break;
+      }
+      dir = strtok(NULL, ":");
+    }
+}
 
 int main(int argc, char const *argv[])
 {
@@ -42,16 +61,12 @@ int main(int argc, char const *argv[])
   char error[100];
   char** args;
   printf ("Entered to finley's shell!\n> ");
-  
+
   while(1){
-
-    
-
     fgets(command_line, 100, stdin);
-    // printf("You entered: %s", command_line);
-    // command_line = strsep(command_line, '\n');
-    // command_line[strcspn(command_line, "\n")] = 0; 
     args = get_args(command_line);
+    
+    // print the args 
     int i = 0;
     while (args[i] != NULL) {
         printf("Arg %d: %s\n", i, args[i]);
@@ -59,6 +74,7 @@ int main(int argc, char const *argv[])
     }
 
     free(args);
+    printf ("\n> ");
   }
   return 0;
 }
