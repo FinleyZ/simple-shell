@@ -35,8 +35,9 @@ char** get_args(char* cl) {
 }
 
 
+
 // unfinished and incorrect
-void get_command(){
+void get_file(){
   char* filename = "finley79212.txt";
   char* path = getenv("PATH");
   char* dir = strtok(path, ":");
