@@ -55,6 +55,12 @@ void get_file(){
     }
 }
 
+void executeFile(const char* filename) {
+    char command[100];
+    sprintf(command, "./%s", filename);
+    system(command);
+}
+
 int main(int argc, char const *argv[])
 {
 
@@ -72,6 +78,10 @@ int main(int argc, char const *argv[])
     while (args[i] != NULL) {
         printf("Arg %d: %s\n", i, args[i]);
         i++;
+    }
+
+    if(args[0] != NULL){
+      executeFile(args[0]);
     }
 
     free(args);
