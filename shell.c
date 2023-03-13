@@ -2,13 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 #define MAX_ARGS 10
 
 char** get_args(char* cl) {
     char* arg;
     char** args = (char**)malloc(MAX_ARGS * sizeof(char*));
-    // cl = strsep(&cl, '\n');
 
     if (cl == NULL)
     {
@@ -26,7 +27,6 @@ char** get_args(char* cl) {
         break;
       }
     }    
-
     // Terminate the args array with a null pointer
     args[i] = NULL; 
     // Remove the newline character for last arg 
@@ -35,38 +35,74 @@ char** get_args(char* cl) {
 }
 
 
+char* get_file(const char* filename) {
+    char* path = strdup(getenv("PATH"));
+    char* path_entry;
+    char* full_path;
 
-// unfinished and incorrect
-void get_file(){
-  char* filename = "finley79212.txt";
-  char* path = getenv("PATH");
-  char* dir = strtok(path, ":");
-  printf ("dir: %s\n", dir);
+    printf("path: %s \n", path);
+    // Iterate over each directory in the PATH variable
+    path_entry = strtok(path, ":");
+    while (path_entry != NULL) {
+      printf("path_entry: %s \n", path_entry);
+        // Create a full path to the file in this directory
+        full_path = malloc(strlen(path_entry) + strlen(filename) + 2);
+        sprintf(full_path, "%s/%s", path_entry, filename);
 
-    while (dir != NULL) {
-      char filepath[1024];
-      snprintf(path, sizeof(path), "%s/%s", dir, filename);
-      printf ("PATH: %s\n", path);
-      if (access(path, F_OK) == 0) {
-          printf("Found %s at %s\n", filename, dir);
-          break;
-      }
-      dir = strtok(NULL, ":");
+        // Check if the file exists in this directory
+        if (access(full_path, X_OK) == 0) {
+          free(path);
+          return full_path;
+        }
+
+        free(full_path);
+
+        // Move to the next directory in the PATH variable
+        path_entry = strtok(NULL, ":");
     }
+    // If we get here, the file was not found in any directory in the PATH variable
+    printf("File '%s' was not found in the PATH variable directories.\n", filename);
+    return NULL;
 }
 
-void executeFile(const char* filename) {
-    char command[100];
-    sprintf(command, "./%s", filename);
-    system(command);
-}
+// pid_t execute_file(const char *file_path) {
+//     pid_t pid = fork(); // Create a child process
+
+//     if (pid == -1) {
+//         perror("fork"); // Error occurred
+//         exit(EXIT_FAILURE);
+//     } else if (pid == 0) {
+//         // Child process
+//         if (execl(file_path, file_path, (char *) NULL) == -1) {
+//             perror("execl"); // Error occurred
+//             exit(EXIT_FAILURE);
+//         }
+//     } else {
+//         // Parent process
+//         int status;
+//         if (waitpid(pid, &status, 0) == -1) {
+//             perror("waitpid"); // Error occurred
+//             exit(EXIT_FAILURE);
+//         }
+
+//         printf("Output of %s:\n", file_path);
+//         FILE *output_file = popen(file_path, "r");
+//         char buffer[1024];
+//         while (fgets(buffer, sizeof(buffer), output_file)) {
+//             printf("%s", buffer);
+//         }
+//         pclose(output_file);
+
+//         return pid;
+//     }
+// }
 
 int main(int argc, char const *argv[])
 {
-
   char command_line[100];
   char error[100];
   char** args;
+  char* file_path;
   printf ("Entered to finley's shell!\n> ");
 
   while(1){
@@ -74,14 +110,20 @@ int main(int argc, char const *argv[])
     args = get_args(command_line);
     
     // print the args 
-    int i = 0;
-    while (args[i] != NULL) {
-        printf("Arg %d: %s\n", i, args[i]);
-        i++;
-    }
+    // int i = 0;
+    // while (args[i] != NULL) {
+    //     printf("Arg %d: %s\n", i, args[i]);
+    //     i++;
+    // }
 
     if(args[0] != NULL){
-      executeFile(args[0]);
+      file_path = get_file(args[0]);
+      if (file_path != NULL)
+      {
+        //execute file 
+      }
+      
+      printf("%s\n",file_path);
     }
 
     free(args);
