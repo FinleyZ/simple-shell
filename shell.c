@@ -40,11 +40,11 @@ char* get_file(const char* filename) {
     char* path_entry;
     char* full_path;
 
-    printf("path: %s \n", path);
+    // printf("path: %s \n", path);
     // Iterate over each directory in the PATH variable
     path_entry = strtok(path, ":");
     while (path_entry != NULL) {
-      printf("path_entry: %s \n", path_entry);
+      // printf("path_entry: %s \n", path_entry);
         // Create a full path to the file in this directory
         full_path = malloc(strlen(path_entry) + strlen(filename) + 2);
         sprintf(full_path, "%s/%s", path_entry, filename);
@@ -65,37 +65,89 @@ char* get_file(const char* filename) {
     return NULL;
 }
 
-// pid_t execute_file(const char *file_path) {
-//     pid_t pid = fork(); // Create a child process
+pid_t execute_file(const char *file_path) {
+  pid_t pid = fork(); // Create a child process
 
-//     if (pid == -1) {
-//         perror("fork"); // Error occurred
-//         exit(EXIT_FAILURE);
-//     } else if (pid == 0) {
-//         // Child process
-//         if (execl(file_path, file_path, (char *) NULL) == -1) {
-//             perror("execl"); // Error occurred
-//             exit(EXIT_FAILURE);
-//         }
-//     } else {
-//         // Parent process
-//         int status;
-//         if (waitpid(pid, &status, 0) == -1) {
-//             perror("waitpid"); // Error occurred
-//             exit(EXIT_FAILURE);
-//         }
+  if (pid == -1) {
+      perror("fork"); // Error occurred
+      exit(EXIT_FAILURE);
+  } else if (pid == 0) {
+      // Child process
+      if (execl(file_path, file_path, (char *) NULL) == -1) {
+          perror("execl"); // Error occurred
+          exit(EXIT_FAILURE);
+      }
+  } else {
+    // Parent process
+    int status;
+    if (waitpid(pid, &status, 0) == -1) {
+        perror("waitpid"); // Error occurred
+        exit(EXIT_FAILURE);
+    }
 
-//         printf("Output of %s:\n", file_path);
-//         FILE *output_file = popen(file_path, "r");
-//         char buffer[1024];
-//         while (fgets(buffer, sizeof(buffer), output_file)) {
-//             printf("%s", buffer);
-//         }
-//         pclose(output_file);
+    return pid;
+  }
+  return pid;
+}
 
-//         return pid;
-//     }
-// }
+pid_t pipe(const char *file_path1, const char *file_path2) {
+  int pipefd[2];
+  if (pipe(pipefd) == -1) {
+    perror("pipe");
+    exit(EXIT_FAILURE);
+  }
+
+    pid_t pid1 = fork(); // Create first child process
+  if (pid1 == -1) {
+    perror("fork");
+    exit(EXIT_FAILURE);
+  } else if (pid1 == 0) {
+    // Child process 1
+    close(pipefd[0]); // Close unused read end of pipe
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+      perror("dup2");
+      exit(EXIT_FAILURE);
+    }
+    if (execl(file_path1, file_path1, (char *) NULL) == -1) {
+      perror("execl");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  pid_t pid2 = fork(); // Create second child process
+  if (pid2 == -1) {
+    perror("fork");
+    exit(EXIT_FAILURE);
+  } else if (pid2 == 0) {
+    // Child process 2
+    close(pipefd[1]); // Close unused write end of pipe
+    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+      perror("dup2");
+      exit(EXIT_FAILURE);
+    }
+    if (execl(file_path2, file_path2, (char *) NULL) == -1) {
+      perror("execl");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Parent process
+  close(pipefd[0]); // Close unused read end of pipe
+  close(pipefd[1]); // Close unused write end of pipe
+
+  int status1, status2;
+  if (waitpid(pid1, &status1, 0) == -1) {
+    perror("waitpid");
+    exit(EXIT_FAILURE);
+  }
+  if (waitpid(pid2, &status2, 0) == -1) {
+    perror("waitpid");
+    exit(EXIT_FAILURE);
+  }
+
+  return pid2;
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -120,10 +172,10 @@ int main(int argc, char const *argv[])
       file_path = get_file(args[0]);
       if (file_path != NULL)
       {
-        //execute file 
+        execute_file(file_path);
       }
       
-      printf("%s\n",file_path);
+      // printf("%s\n",file_path);
     }
 
     free(args);
