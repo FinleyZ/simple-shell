@@ -6,6 +6,8 @@
 #include <sys/wait.h>
 
 #define MAX_ARGS 10
+//export PATH="$PATH:$(pwd)"
+
 
 char** get_args(char* cl) {
     char* arg;
@@ -90,63 +92,6 @@ pid_t execute_file(const char *file_path) {
   return pid;
 }
 
-pid_t pipe(const char *file_path1, const char *file_path2) {
-  int pipefd[2];
-  if (pipe(pipefd) == -1) {
-    perror("pipe");
-    exit(EXIT_FAILURE);
-  }
-
-    pid_t pid1 = fork(); // Create first child process
-  if (pid1 == -1) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  } else if (pid1 == 0) {
-    // Child process 1
-    close(pipefd[0]); // Close unused read end of pipe
-    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
-      perror("dup2");
-      exit(EXIT_FAILURE);
-    }
-    if (execl(file_path1, file_path1, (char *) NULL) == -1) {
-      perror("execl");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  pid_t pid2 = fork(); // Create second child process
-  if (pid2 == -1) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  } else if (pid2 == 0) {
-    // Child process 2
-    close(pipefd[1]); // Close unused write end of pipe
-    if (dup2(pipefd[0], STDIN_FILENO) == -1) {
-      perror("dup2");
-      exit(EXIT_FAILURE);
-    }
-    if (execl(file_path2, file_path2, (char *) NULL) == -1) {
-      perror("execl");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  // Parent process
-  close(pipefd[0]); // Close unused read end of pipe
-  close(pipefd[1]); // Close unused write end of pipe
-
-  int status1, status2;
-  if (waitpid(pid1, &status1, 0) == -1) {
-    perror("waitpid");
-    exit(EXIT_FAILURE);
-  }
-  if (waitpid(pid2, &status2, 0) == -1) {
-    perror("waitpid");
-    exit(EXIT_FAILURE);
-  }
-
-  return pid2;
-}
 
 
 int main(int argc, char const *argv[])
