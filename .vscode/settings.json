@@ -3,6 +3,7 @@
     "unistd.h": "c",
     "fcntl.h": "c",
     "time.h": "c",
-    "types.h": "c"
+    "types.h": "c",
+    "__config": "c"
   }
 }
