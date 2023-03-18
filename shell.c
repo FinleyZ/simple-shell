@@ -4,10 +4,15 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <stdbool.h>
 
 #define MAX_ARGS 10
 //export PATH="$PATH:$(pwd)"
 
+// pid_t pid;
+pid_t current_pid = 0;
 
 char** get_args(char* cl) {
     char* arg;
@@ -67,6 +72,26 @@ char* get_file(const char* filename) {
     return NULL;
 }
 
+// Handle Ctrl+C
+void cancellation_handler(int dummy){
+  if (current_pid != 0) {
+    kill(current_pid, SIGTERM); // Send SIGTSTP signal to child process
+    printf("\nProcess %d canceled.\n", current_pid);
+    current_pid = 0;
+  }
+}
+
+
+// Handle Ctrl+Z
+void suspension_handler(int dummy) {
+  if (current_pid != 0) {
+    kill(current_pid, SIGTSTP); // Send SIGTSTP signal to child process
+    printf("\nProcess %d suspended.\n", current_pid);
+    current_pid = 0;
+  }
+}
+
+  
 pid_t execute_file(const char *file_path) {
   pid_t pid = fork(); // Create a child process
 
@@ -82,7 +107,8 @@ pid_t execute_file(const char *file_path) {
   } else {
     // Parent process
     int status;
-    if (waitpid(pid, &status, 0) == -1) {
+    current_pid = pid;
+    if (waitpid(pid, &status, WUNTRACED) == -1) {
         perror("waitpid"); // Error occurred
         exit(EXIT_FAILURE);
     }
@@ -93,19 +119,22 @@ pid_t execute_file(const char *file_path) {
 }
 
 
-
 int main(int argc, char const *argv[])
 {
   char command_line[100];
   char error[100];
   char** args;
   char* file_path;
+  bool isExist = false;
+
+  signal(SIGINT, cancellation_handler); // Handle Ctrl+Z
+  signal(SIGTSTP, suspension_handler); // Handle Ctrl+C
+
   printf ("Entered to finley's shell!\n> ");
 
-  while(1){
+  while(!isExist){
     fgets(command_line, 100, stdin);
     args = get_args(command_line);
-    
     // print the args 
     // int i = 0;
     // while (args[i] != NULL) {
@@ -113,7 +142,10 @@ int main(int argc, char const *argv[])
     //     i++;
     // }
 
-    if(args[0] != NULL){
+    if(strcasecmp(args[0],"exist") == 0){
+      isExist = true;
+    }
+    else if(args[0] != NULL ){
       file_path = get_file(args[0]);
       if (file_path != NULL)
       {
