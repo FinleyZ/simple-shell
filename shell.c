@@ -1,5 +1,3 @@
-//export PATH="$PATH:$(pwd)"
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,7 +11,6 @@
 #define MAX_ARGS 10
 //export PATH="$PATH:$(pwd)"
 
-// pid_t pid;
 pid_t current_pid = 0;
 
 char** get_args(char* cl) {
@@ -228,7 +225,7 @@ int main(int argc, char const *argv[])
   char error[100];
   char** args;
   char* file_path;
-  bool isExist = false;
+  bool isExit = false;
   remove("./history.txt");
 
   signal(SIGINT, cancellation_handler); // Handle Ctrl+Z
@@ -236,7 +233,7 @@ int main(int argc, char const *argv[])
 
   printf ("Entered to finley's shell!\n> ");
 
-  while(!isExist){
+  while(!isExit){
     fgets(command_line, 100, stdin);
     args = get_args(strdup(command_line));
     // print the args 
@@ -247,8 +244,8 @@ int main(int argc, char const *argv[])
     // }
 
     // printf("command: %s\n", command_line);
-    if(strcasecmp(args[0],"exist") == 0){
-      isExist = true;
+    if(strcasecmp(args[0],"exit") == 0){
+      isExit = true;
     }
     
     else if(strcmp(args[0], "history")==0){
@@ -267,7 +264,6 @@ int main(int argc, char const *argv[])
         int output_index = i+2;
 
         if(args[input_index] != NULL && args[output_index] != NULL && strcmp(args[pip_index],"|") == 0){
-          printf("\n45454545\n");
 
           char* input_file_path = get_file(args[input_index]);
           char* output_file_path = get_file(args[output_index]);
